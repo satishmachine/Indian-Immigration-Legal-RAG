@@ -320,7 +320,7 @@
 
     document.getElementById('pageNumVal').textContent = initialPageNum;
 
-    const pdfUrl = `/app/static/pdfs/${encodeURIComponent(pdfFile)}`;
+    const pdfUrl = `./pdfs/${encodeURIComponent(pdfFile)}`;
     document.getElementById('nativePdfBtn').href = `${pdfUrl}#page=${initialPageNum}&search=Section%20${encodeURIComponent(sectionNum)}`;
 
     // Render using PDF.js for exact Canvas rendering & Highlight Overlays
