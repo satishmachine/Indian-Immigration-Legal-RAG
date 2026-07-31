@@ -43,8 +43,7 @@ class LLMFactory:
         **kwargs: Any,
     ) -> BaseChatModel:
         """
-        Instantiate Chat LLM based on provider (groq / openai / euri).
-        Default model for Groq: llama-3.3-70b-versatile.
+        Instantiate Chat LLM using Groq (llama-3.3-70b-versatile) as primary provider.
         """
         settings = get_settings()
 
@@ -56,7 +55,7 @@ class LLMFactory:
         if groq_key:
             groq_key = groq_key.strip("'\"")
 
-        # 1. Try Groq Provider if GROQ_API_KEY is present or provider == 'groq'
+        # 1. Primary: Groq Provider (llama-3.3-70b-versatile)
         if groq_key and groq_key not in ("placeholder", "your_groq_api_key_here", ""):
             resolved_model = (
                 model_name
@@ -83,12 +82,16 @@ class LLMFactory:
                     **kwargs,
                 )
 
-        # 2. Fallback to OpenAI / Euri Proxy
+        # 2. Fallback to OpenAI / Euri Proxy if GROQ_API_KEY is not set
         cfg = settings.openai
-        euri_key = os.environ.get("EURI_API_KEY") or os.environ.get("OPENAI_API_KEY") or (cfg.api_key.get_secret_value() if cfg.api_key else None)
+        euri_key = (
+            os.environ.get("EURI_API_KEY")
+            or os.environ.get("OPENAI_API_KEY")
+            or (cfg.api_key.get_secret_value() if cfg.api_key else None)
+        )
         resolved_euri_key = euri_key.strip("'\"") if euri_key else None
 
-        if resolved_euri_key and resolved_euri_key not in ("placeholder", "your_openai_api_key_here"):
+        if resolved_euri_key and resolved_euri_key not in ("placeholder", "your_openai_api_key_here", ""):
             resolved_model = model_name or os.environ.get("OPENAI_CHAT_MODEL") or getattr(cfg, "chat_model", "gpt-4.1-mini")
             resolved_base_url = (
                 base_url
@@ -97,12 +100,7 @@ class LLMFactory:
                 or "https://api.euron.one/api/v1/euri"
             )
 
-            logger.info(
-                "Instantiating ChatOpenAI (model=%r, base_url=%r, temperature=%.2f)",
-                resolved_model,
-                resolved_base_url,
-                temperature,
-            )
+            logger.info("Instantiating ChatOpenAI via Euri (model=%r, base_url=%r)", resolved_model, resolved_base_url)
             return ChatOpenAI(
                 model=resolved_model,
                 api_key=resolved_euri_key,
@@ -113,7 +111,7 @@ class LLMFactory:
             )
 
         # 3. Fallback to Mock LLM if no keys are configured
-        logger.warning("No GROQ_API_KEY or EURI_API_KEY found. Falling back to MockLegalLLM.")
+        logger.warning("No GROQ_API_KEY found. Falling back to MockLegalLLM.")
         from services.chat.mock_llm import MockLegalLLM
         return MockLegalLLM()
 
