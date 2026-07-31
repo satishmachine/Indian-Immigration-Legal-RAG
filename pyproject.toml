@@ -1,0 +1,263 @@
+[build-system]
+requires = ["setuptools>=69.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "indian-immigration-legal-assistant"
+version = "0.1.0"
+description = "Production-grade Legal RAG platform for Indian Immigration, Emigration, Citizenship, Passport, and Visa laws."
+authors = [{ name = "Senior AI Engineer", email = "dev@legalassistant.ai" }]
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12"
+keywords = ["rag", "legal", "langchain", "immigration", "india", "qdrant", "fastapi", "streamlit"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Legal Professionals",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "aiofiles>=24.1.0",
+    "anyio>=4.6.0",
+    "black>=24.10.0",
+    "cohere>=5.0.0",
+    "cryptography>=43.0.0",
+    "httpx>=0.28.0",
+    "ipython>=8.29.0",
+    "langchain>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langchain-core>=0.3.0",
+    "langchain-google-genai>=2.0.0",
+    "langchain-groq>=1.1.3",
+    "langchain-openai>=0.2.0",
+    "langchain-qdrant>=0.2.0",
+    "langchain-text-splitters>=0.3.0",
+    "langgraph>=0.2.0",
+    "langsmith>=0.1.0",
+    "mypy>=1.13.0",
+    "numpy>=1.26.0",
+    "openai>=1.50.0",
+    "opentelemetry-api>=1.28.0",
+    "opentelemetry-instrumentation-fastapi>=0.49b0",
+    "opentelemetry-sdk>=1.28.0",
+    "passlib[bcrypt]>=1.7.4",
+    "pdfplumber>=0.11.0",
+    "pre-commit>=4.0.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "pypdf>=4.3.0",
+    "pypdfium2>=4.30.0",
+    "pytesseract>=0.3.13",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "pytest-httpx>=0.32.0",
+    "pytest-mock>=3.14.0",
+    "python-docx>=1.1.0",
+    "python-dotenv>=1.0.1",
+    "python-jose[cryptography]>=3.3.0",
+    "python-json-logger>=2.0.7",
+    "python-multipart>=0.0.12",
+    "qdrant-client>=1.11.0",
+    "redis>=5.2.0",
+    "respx>=0.21.0",
+    "rich>=13.9.0",
+    "ruff>=0.8.0",
+    "scipy>=1.14.0",
+    "st-pages>=1.0.0",
+    "streamlit>=1.40.0",
+    "streamlit-extras>=0.4.0",
+    "structlog>=24.4.0",
+    "tenacity>=9.0.0",
+    "tiktoken>=0.8.0",
+    "tqdm>=4.67.0",
+    "types-redis>=4.6.0",
+    "types-requests>=2.32.0",
+    "types-tqdm>=4.67.0",
+    "unstructured[pdf]>=0.16.0",
+    "uvicorn[standard]>=0.32.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/indian-immigration-legal-assistant"
+Documentation = "https://docs.legalassistant.ai"
+Repository = "https://github.com/your-org/indian-immigration-legal-assistant"
+Issues = "https://github.com/your-org/indian-immigration-legal-assistant/issues"
+
+# ---------------------------------------------------------------------------
+# Ruff – linting & formatting
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+indent-width = 4
+src = ["src", "tests"]
+exclude = [
+    ".bzr", ".direnv", ".eggs", ".git", ".git-rewrite", ".hg",
+    ".ipynb_checkpoints", ".mypy_cache", ".nox", ".pants.d",
+    ".pyenv", ".pytest_cache", ".pytype", ".ruff_cache", ".svn",
+    ".tox", ".venv", ".vscode", "__pypackages__", "_build",
+    "buck-out", "build", "dist", "node_modules", "site-packages", "venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+    "TCH", # flake8-type-checking
+    "ANN", # flake8-annotations
+    "S",   # flake8-bandit (security)
+    "RUF", # Ruff-specific rules
+    "N",   # pep8-naming
+    "D",   # pydocstyle
+    "PT",  # flake8-pytest-style
+    "PL",  # Pylint
+    "TRY", # tryceratops
+]
+ignore = [
+    "D100",    # Missing docstring in public module
+    "D104",    # Missing docstring in public package
+    "D107",    # Missing docstring in __init__
+    "ANN101",  # Missing type annotation for self
+    "ANN102",  # Missing type annotation for cls
+    "S101",    # Use of assert (allowed in tests)
+    "TRY003",  # Avoid specifying long messages outside exception class
+    "PLR0913", # Too many arguments to function call
+]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "core", "api", "ingestion", "retrieval", "services"]
+combine-as-imports = true
+force-sort-within-sections = true
+
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py"    = ["ANN", "D", "S", "PLR2004"]
+"src/app/**/*.py" = ["ANN"]  # Streamlit pages – annotations optional
+
+[tool.ruff.format]
+quote-style             = "double"
+indent-style            = "space"
+skip-magic-trailing-comma = false
+line-ending             = "auto"
+
+# ---------------------------------------------------------------------------
+# Black – code formatter
+# ---------------------------------------------------------------------------
+[tool.black]
+line-length    = 100
+target-version = ["py312"]
+include        = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | migrations
+)/
+'''
+
+# ---------------------------------------------------------------------------
+# MyPy – static type checking
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version       = "3.12"
+strict               = true
+warn_return_any      = true
+warn_unused_configs  = true
+ignore_missing_imports = true
+disallow_untyped_defs  = true
+disallow_any_generics  = true
+check_untyped_defs     = true
+no_implicit_optional   = true
+show_error_codes       = true
+plugins                = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["streamlit.*", "qdrant_client.*", "cohere.*"]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# Pytest – test configuration
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+pythonpath = ["src"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "-v",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html:reports/coverage",
+    "--cov-fail-under=80",
+]
+testpaths    = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes    = ["Test*"]
+python_functions  = ["test_*"]
+markers = [
+    "unit: Fast, isolated unit tests (no external services)",
+    "integration: Tests that require external services (Qdrant, OpenAI, etc.)",
+    "e2e: End-to-end tests covering the full pipeline",
+    "slow: Tests that take longer than 5 seconds",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+# ---------------------------------------------------------------------------
+# Coverage
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit   = ["*/tests/*", "*/migrations/*", "*/__init__.py", "*/conftest.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing  = true
+skip_covered  = false
+precision     = 2
+
+# ---------------------------------------------------------------------------
+# Setuptools – package discovery
+# ---------------------------------------------------------------------------
+[tool.setuptools.packages.find]
+where   = ["src"]
+include = ["*"]
+exclude = ["tests*"]

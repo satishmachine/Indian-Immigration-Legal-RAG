@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statutory Act PDF Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Include PDF.js Library from CDN for Canvas Text Rendering & Precise Highlight Overlay -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #0F172A;
+      --bg-header: #1E293B;
+      --border-color: #334155;
+      --accent-blue: #3B82F6;
+      --accent-light: #93C5FD;
+      --highlight-yellow: rgba(255, 235, 59, 0.65);
+      --highlight-border: #FACC15;
+      --india-saffron: #FF9933;
+      --india-green: #22C55E;
+      --text-main: #F8FAFC;
+      --text-dim: #94A3B8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Tri-color Accent Line */
+    .tricolor-bar {
+      height: 3px;
+      width: 100%;
+      background: linear-gradient(90deg, var(--india-saffron) 0%, #FFFFFF 50%, var(--india-green) 100%);
+    }
+
+    /* Compact Thin Header */
+    header {
+      height: 44px;
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      z-index: 10;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      overflow: hidden;
+    }
+
+    .emblem-icon {
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    .act-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 480px;
+    }
+
+    .section-badge {
+      background: rgba(250, 204, 21, 0.25);
+      border: 1.5px solid #FACC15;
+      color: #FEF08A;
+      padding: 0.18rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      box-shadow: 0 0 10px rgba(250, 204, 21, 0.3);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .page-indicator {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border-color);
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .page-num-val {
+      color: var(--accent-light);
+      font-weight: 600;
+    }
+
+    .btn-nav {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.76rem;
+      font-weight: 500;
+    }
+
+    .btn-nav:hover {
+      background: rgba(59, 130, 246, 0.3);
+      color: #FFFFFF;
+    }
+
+    .btn-native {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.76rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      text-decoration: none;
+      transition: background 0.15s ease;
+    }
+
+    .btn-native:hover {
+      background: rgba(59, 130, 246, 0.3);
+      border-color: var(--accent-blue);
+      color: #FFFFFF;
+    }
+
+    /* Full-width PDF Container */
+    main {
+      flex: 1;
+      width: 100%;
+      height: calc(100vh - 47px);
+      position: relative;
+      background: #111827;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0;
+      scroll-behavior: smooth;
+    }
+
+    /* PDF Page Render Box */
+    .pdf-page-wrapper {
+      position: relative;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      margin-bottom: 1.5rem;
+      background: #FFFFFF;
+      border-radius: 2px;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    /* Text Layer & Highlight Overlay */
+    .text-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      opacity: 1.0;
+      line-height: 1.0;
+      pointer-events: none;
+    }
+
+    .highlight-span {
+      position: absolute;
+      background-color: rgba(255, 235, 59, 0.65) !important;
+      border: 2px solid #FACC15 !important;
+      border-radius: 4px;
+      box-shadow: 0 0 16px rgba(250, 204, 21, 0.9);
+      z-index: 10;
+      animation: pulseHighlight 2s infinite alternate;
+    }
+
+    @keyframes pulseHighlight {
+      0% { background-color: rgba(255, 235, 59, 0.55); box-shadow: 0 0 10px rgba(250, 204, 21, 0.7); }
+      100% { background-color: rgba(255, 235, 59, 0.90); box-shadow: 0 0 24px rgba(250, 204, 21, 1.0); }
+    }
+
+    /* Floating Section Indicator Badge inside Viewer */
+    .floating-section-toast {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      background: #1E293B;
+      border: 1.5px solid #FACC15;
+      color: #FEF08A;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Standard iframe fallback if PDF.js is unavailable */
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #FFFFFF;
+    }
+  </style>
+</head>
+<body>
+  <div class="tricolor-bar"></div>
+
+  <header>
+    <div class="brand-group">
+      <span class="emblem-icon">🏛️</span>
+      <span id="actTitleText" class="act-title">Statutory Act Viewer</span>
+      <span id="sectionBadge" class="section-badge">✨ Section --</span>
+    </div>
+
+    <div class="header-right">
+      <div class="page-indicator">
+        <button class="btn-nav" onclick="changePage(-1)">◄</button>
+        <span>Page</span>
+        <span id="pageNumVal" class="page-num-val">1</span>
+        <span>/</span>
+        <span id="pageTotalVal">--</span>
+        <button class="btn-nav" onclick="changePage(1)">►</button>
+      </div>
+      <a id="nativePdfBtn" class="btn-native" href="#" target="_blank">↗ Native Tab</a>
+    </div>
+  </header>
+
+  <main id="viewerMain">
+    <div id="loadingSpinner" style="color:var(--text-dim); margin-top:3rem; font-size:0.9rem;">
+      ⏳ Loading Statutory PDF & Highlighting Section...
+    </div>
+    <div id="pdfRenderContainer" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
+    <iframe id="pdfFallbackFrame" style="display:none;"></iframe>
+  </main>
+
+  <div id="floatingToast" class="floating-section-toast" style="display:none;">
+    <span>⚡</span>
+    <span>Navigated & Highlighted Section <strong id="toastSecNum">--</strong> on Page <strong id="toastPageNum">1</strong></span>
+  </div>
+
+  <script>
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    // Parse URL Parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const pdfFile = urlParams.get('file') || 'the_citizenship_act_1955.pdf';
+    const sectionNum = urlParams.get('section') || '';
+    const sectionTitle = urlParams.get('title') || '';
+    const initialPageNum = parseInt(urlParams.get('page') || '1', 10);
+    const actTitle = urlParams.get('act') || 'Statutory Act';
+
+    let pdfDoc = null;
+    let currentPage = initialPageNum;
+    let totalPages = 1;
+    const scale = 1.35; // Sharp readable scaling
+
+    // Set Header Info
+    document.title = `${actTitle} ${sectionNum ? '– Section ' + sectionNum : ''} | Statutory Viewer`;
+    document.getElementById('actTitleText').textContent = actTitle;
+
+    if (sectionNum && sectionNum.toUpperCase() !== 'N/A' && sectionNum.toUpperCase() !== 'NONE') {
+      const secBadge = document.getElementById('sectionBadge');
+      secBadge.innerHTML = `✨ Highlighted Section ${sectionNum}`;
+      secBadge.style.display = 'inline-flex';
+      document.getElementById('toastSecNum').textContent = sectionNum;
+      document.getElementById('toastPageNum').textContent = initialPageNum;
+      document.getElementById('floatingToast').style.display = 'flex';
+    } else {
+      document.getElementById('sectionBadge').style.display = 'none';
+    }
+
+    document.getElementById('pageNumVal').textContent = initialPageNum;
+
+    const pdfUrl = `/app/static/pdfs/${encodeURIComponent(pdfFile)}`;
+    document.getElementById('nativePdfBtn').href = `${pdfUrl}#page=${initialPageNum}&search=Section%20${encodeURIComponent(sectionNum)}`;
+
+    // Render using PDF.js for exact Canvas rendering & Highlight Overlays
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+        pdfDoc = pdf;
+        totalPages = pdf.numPages;
+        document.getElementById('pageTotalVal').textContent = totalPages;
+        document.getElementById('loadingSpinner').style.display = 'none';
+
+        // Render target page
+        renderPage(currentPage);
+      }).catch(err => {
+        console.warn("PDF.js loading fallback to iframe:", err);
+        useIframeFallback();
+      });
+    } else {
+      useIframeFallback();
+    }
+
+    function useIframeFallback() {
+      document.getElementById('loadingSpinner').style.display = 'none';
+      document.getElementById('pdfRenderContainer').style.display = 'none';
+      const frame = document.getElementById('pdfFallbackFrame');
+      frame.style.display = 'block';
+      frame.src = `${pdfUrl}#page=${initialPageNum}&search=Section%20${encodeURIComponent(sectionNum)}`;
+    }
+
+    function renderPage(pageNum) {
+      if (!pdfDoc) return;
+      if (pageNum < 1) pageNum = 1;
+      if (pageNum > totalPages) pageNum = totalPages;
+
+      currentPage = pageNum;
+      document.getElementById('pageNumVal').textContent = currentPage;
+
+      const container = document.getElementById('pdfRenderContainer');
+      container.innerHTML = ''; // Clear container for clean view
+
+      pdfDoc.getPage(pageNum).then(page => {
+        const viewport = page.getViewport({ scale: scale });
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'pdf-page-wrapper';
+        wrapper.style.width = `${viewport.width}px`;
+        wrapper.style.height = `${viewport.height}px`;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        const textLayer = document.createElement('div');
+        textLayer.className = 'text-layer';
+
+        wrapper.appendChild(canvas);
+        wrapper.appendChild(textLayer);
+        container.appendChild(wrapper);
+
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: viewport
+        };
+
+        page.render(renderContext).promise.then(() => {
+          // Highlight Section Text on Page (English Only & Title Aware)
+          highlightSectionOnPage(page, viewport, textLayer);
+        });
+      });
+    }
+
+    function highlightSectionOnPage(page, viewport, textLayer) {
+      if (!sectionNum || sectionNum.toUpperCase() === 'N/A') return;
+
+      // Extract section digits e.g. "10" from "10" or "Section 10"
+      const secMatch = sectionNum.match(/(\d+[A-Z]?)/i);
+      const secDigits = secMatch ? secMatch[1] : sectionNum.trim();
+
+      const secExactDot = `${secDigits}.`;
+      const secExactColon = `${secDigits}:`;
+      const secSectionWord = `SECTION ${secDigits}`;
+      const secSecWord = `SEC. ${secDigits}`;
+      const secRuleWord = `RULE ${secDigits}`;
+
+      const titleKeywords = sectionTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length > 3 && !['this','that','with','from','under','have','such','shall','section','rules','act'].includes(w));
+
+      page.getTextContent().then(textContent => {
+        let candidateMatches = [];
+
+        // Step 1: Scan English text items on the page (ignoring Hindi Devanagari script)
+        textContent.items.forEach((item, index) => {
+          const strRaw = item.str.trim();
+
+          // FILTER OUT HINDI (Devanagari characters \u0900-\u097F)
+          if (/[\u0900-\u097F]/.test(strRaw)) {
+            return;
+          }
+
+          const str = strRaw.toUpperCase();
+
+          // Header match criteria for English text
+          const isExactHeader = (
+            str === secExactDot ||
+            str === secExactColon ||
+            str === secDigits ||
+            str.startsWith(secExactDot) ||
+            str.startsWith(secSectionWord) ||
+            str.startsWith(secSecWord) ||
+            str.startsWith(secRuleWord) ||
+            str.startsWith(`${secDigits}(`)
+          );
+
+          const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+          const x = tx[4];
+          const y = tx[5] - (item.height * viewport.scale);
+
+          // Body region check (left-aligned English section headings)
+          const isBodyRegion = (y > 35 && y < viewport.height - 35 && x < viewport.width * 0.48);
+
+          if (isExactHeader && isBodyRegion) {
+            // Check title score for next 8 text tokens on the same/next line
+            let titleMatchScore = 0;
+            for (let k = index + 1; k < Math.min(index + 10, textContent.items.length); k++) {
+              const nextStr = textContent.items[k].str.toLowerCase();
+              if (titleKeywords.some(kw => nextStr.includes(kw))) {
+                titleMatchScore += 1;
+              }
+            }
+
+            candidateMatches.push({ item, index, x, y, score: titleMatchScore });
+          }
+        });
+
+        // Step 2: Fallback scan if no left-margin exact header match
+        if (candidateMatches.length === 0) {
+          textContent.items.forEach((item, index) => {
+            const strRaw = item.str.trim();
+            if (/[\u0900-\u097F]/.test(strRaw)) return;
+
+            const str = strRaw.toUpperCase();
+            if (str.includes(secExactDot) || str.includes(secSectionWord) || str.includes(secRuleWord)) {
+              const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+              const x = tx[4];
+              const y = tx[5] - (item.height * viewport.scale);
+              candidateMatches.push({ item, index, x, y, score: 0 });
+            }
+          });
+        }
+
+        if (candidateMatches.length === 0) return;
+
+        // Sort candidates by title score descending
+        candidateMatches.sort((a, b) => b.score - a.score);
+        const bestMatch = candidateMatches[0];
+
+        // Step 3: Draw Pulsating Highlight Overlay for the Best Section Title Heading
+        const mainItem = bestMatch.item;
+        const tx = pdfjsLib.Util.transform(viewport.transform, mainItem.transform);
+        const startX = tx[4];
+        const startY = tx[5] - (mainItem.height * viewport.scale);
+
+        // Find full horizontal line width for English section title heading
+        let lineLineWidth = Math.max(mainItem.width * viewport.scale * 1.5, 260);
+
+        for (let i = bestMatch.index + 1; i < Math.min(bestMatch.index + 12, textContent.items.length); i++) {
+          const nextItem = textContent.items[i];
+          if (/[\u0900-\u097F]/.test(nextItem.str)) continue; // Skip Hindi text tokens
+
+          const nextTx = pdfjsLib.Util.transform(viewport.transform, nextItem.transform);
+          const nextY = nextTx[5] - (nextItem.height * viewport.scale);
+          if (Math.abs(nextY - startY) < 14) {
+            const endX = nextTx[4] + (nextItem.width * viewport.scale);
+            lineLineWidth = Math.max(lineLineWidth, endX - startX + 15);
+          } else {
+            break;
+          }
+        }
+
+        const highlightSpan = document.createElement('div');
+        highlightSpan.className = 'highlight-span';
+        highlightSpan.style.left = `${startX - 6}px`;
+        highlightSpan.style.top = `${startY - 4}px`;
+        highlightSpan.style.width = `${Math.min(lineLineWidth, viewport.width - startX - 20)}px`;
+        highlightSpan.style.height = `${Math.max(mainItem.height * viewport.scale * 1.4, 26)}px`;
+
+        textLayer.appendChild(highlightSpan);
+
+        // Step 4: Smooth scroll to center highlighted English section in viewport
+        const mainViewport = document.getElementById('viewerMain');
+        const targetScroll = Math.max(0, bestMatch.y - 120);
+        mainViewport.scrollTo({ top: targetScroll, behavior: 'smooth' });
+      });
+    }
+
+    function changePage(delta) {
+      if (pdfDoc) {
+        renderPage(currentPage + delta);
+      }
+    }
+  </script>
+</body>
+</html>
