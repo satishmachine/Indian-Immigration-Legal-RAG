@@ -147,3 +147,6 @@ tmp/
 temp/
 *.tmp
 *.bak
+
+# Local Data base
+qdrant_db
