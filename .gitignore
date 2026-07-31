@@ -103,7 +103,7 @@ notebooks/.ipynb_checkpoints/
 # ---------------------------------------------------------------------------
 # Model Cache (Sentence Transformers / HuggingFace)
 # ---------------------------------------------------------------------------
-models/
+
 .cache/huggingface/
 .cache/torch/
 
