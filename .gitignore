@@ -33,6 +33,7 @@ ENV/
 env/
 .env.local
 .env.*.local
+uv.lock
 
 # ---------------------------------------------------------------------------
 # Environment & Secrets – NEVER COMMIT
