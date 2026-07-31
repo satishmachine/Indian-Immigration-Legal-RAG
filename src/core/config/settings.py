@@ -1161,12 +1161,22 @@ def get_settings() -> Settings:
 
     Reads ``.env`` and environment variables on the first call; subsequent
     calls return the in-process cached instance.
-
-    Prefer dependency injection over importing ``settings`` directly in
-    business-logic or infrastructure code.
     """
     global _settings  # noqa: PLW0603
     if _settings is None:
+        # Automatically sync Streamlit Cloud Secrets into os.environ
+        try:
+            import os
+            import streamlit as st
+            if hasattr(st, "secrets") and st.secrets:
+                for k, v in st.secrets.items():
+                    if isinstance(v, (str, int, float, bool)):
+                        key_upper = k.upper()
+                        if key_upper not in os.environ:
+                            os.environ[key_upper] = str(v)
+        except Exception:
+            pass
+
         _settings = Settings()
         _settings.bootstrap()
     return _settings
