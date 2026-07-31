@@ -18,12 +18,18 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# Ensure src/ and project root are at the top of sys.path
+# Clean sys.path: ensure src/ is the sole authoritative package root
 root_dir = Path(__file__).resolve().parent
 src_dir = root_dir / "src"
-for path_str in (str(src_dir), str(root_dir)):
-    if path_str not in sys.path:
-        sys.path.insert(0, path_str)
+
+src_str = str(src_dir)
+root_str = str(root_dir)
+
+if root_str in sys.path:
+    sys.path.remove(root_str)
+if src_str in sys.path:
+    sys.path.remove(src_str)
+sys.path.insert(0, src_str)
 
 import streamlit as st
 
