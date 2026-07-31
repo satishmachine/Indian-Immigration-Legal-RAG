@@ -203,7 +203,7 @@ class PDFParser(BaseDocumentParser):
         try:
             import pytesseract  # noqa: PLC0415
         except ImportError:
-            logger.warning("ocr_deps_missing: pytesseract not installed")
+            logger.debug("ocr_deps_missing: pytesseract not installed")
             return {}
 
         images = []
