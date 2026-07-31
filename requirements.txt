@@ -1,6 +1,6 @@
 # =============================================================================
-# Indian Immigration & Emigration Legal Assistant – Requirements
-# Python 3.12 | Production Grade
+# Bureau of Immigration – Statutory AI Assistant Requirements
+# Python 3.12 | Streamlit Cloud Production Ready
 # =============================================================================
 
 # ---------------------------------------------------------------------------
@@ -10,115 +10,43 @@ langchain>=0.3.0
 langchain-core>=0.3.0
 langchain-community>=0.3.0
 langchain-openai>=0.2.0
-langchain-google-genai>=2.0.0
 langchain-qdrant>=0.2.0
 langchain-text-splitters>=0.3.0
-langgraph>=0.2.0                   # Agentic workflows
-langsmith>=0.1.0                   # Tracing & observability
 
 # ---------------------------------------------------------------------------
-# Vector Database
+# Vector Database & Embeddings
 # ---------------------------------------------------------------------------
-qdrant-client>=1.11.0             # Qdrant Python SDK with gRPC support
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# Embedding & API Reranking Models
-# ---------------------------------------------------------------------------
-openai>=1.50.0                    # OpenAI embeddings + chat completions
-cohere>=5.0.0                     # Cohere API reranker
-tiktoken>=0.8.0                   # OpenAI tokenizer
+qdrant-client>=1.11.0
+openai>=1.50.0
+tiktoken>=0.8.0
 
 # ---------------------------------------------------------------------------
 # Document Ingestion & Parsing
 # ---------------------------------------------------------------------------
-pypdf>=4.3.0                      # PDF parsing
-PyMuPDF>=1.24.0                   # High-performance fitz PDF text & block extraction
-pypdfium2>=4.30.0                 # High-fidelity PDF rendering
-pdfplumber>=0.11.0                # Table & text extraction from PDFs
-python-docx>=1.1.0                # DOCX support
-unstructured[pdf]>=0.16.0         # Unstructured document parsing
-pytesseract>=0.3.13               # OCR for scanned PDFs
+pypdf>=4.3.0
+PyMuPDF>=1.24.0
+pypdfium2>=4.30.0
+python-docx>=1.1.0
 
 # ---------------------------------------------------------------------------
-# API Framework
-# ---------------------------------------------------------------------------
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
-httpx>=0.28.0                     # Async HTTP client
-python-multipart>=0.0.12          # Form/file upload support
-
-# ---------------------------------------------------------------------------
-# Frontend
+# Streamlit & Web API Framework
 # ---------------------------------------------------------------------------
 streamlit>=1.40.0
 streamlit-extras>=0.4.0
-st-pages>=1.0.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+httpx>=0.28.0
 
 # ---------------------------------------------------------------------------
-# Configuration & Environment
+# Configuration & Utilities
 # ---------------------------------------------------------------------------
 pydantic>=2.9.0
-pydantic-settings>=2.6.0          # Settings management with env vars
-python-dotenv>=1.0.1              # .env file loading
-
-# ---------------------------------------------------------------------------
-# Logging & Observability
-# ---------------------------------------------------------------------------
-structlog>=24.4.0                 # Structured logging
-rich>=13.9.0                      # Pretty terminal output
-python-json-logger>=2.0.7         # JSON log formatter
-opentelemetry-api>=1.28.0
-opentelemetry-sdk>=1.28.0
-opentelemetry-instrumentation-fastapi>=0.49b0
-
-# ---------------------------------------------------------------------------
-# Caching
-# ---------------------------------------------------------------------------
-redis>=5.2.0                      # Redis caching (optional)
-diskcache>=5.6.3                  # Disk-based caching (fallback)
-
-# ---------------------------------------------------------------------------
-# Utilities
-# ---------------------------------------------------------------------------
-tenacity>=9.0.0                   # Retry logic with exponential back-off
-anyio>=4.6.0                      # Async utilities
-aiofiles>=24.1.0                  # Async file I/O
+pydantic-settings>=2.6.0
+python-dotenv>=1.0.1
+structlog>=24.4.0
+rich>=13.9.0
+diskcache>=5.6.3
+tenacity>=9.0.0
 numpy>=1.26.0
 scipy>=1.14.0
-tqdm>=4.67.0                      # Progress bars
-
-# ---------------------------------------------------------------------------
-# Security
-# ---------------------------------------------------------------------------
-python-jose[cryptography]>=3.3.0  # JWT tokens
-passlib[bcrypt]>=1.7.4            # Password hashing
-cryptography>=43.0.0
-
-# ---------------------------------------------------------------------------
-# Dev / Linting / Formatting
-# ---------------------------------------------------------------------------
-ruff>=0.8.0
-black>=24.10.0
-mypy>=1.13.0
-pre-commit>=4.0.0
-ipython>=8.29.0
-
-# ---------------------------------------------------------------------------
-# Testing
-# ---------------------------------------------------------------------------
-pytest>=8.3.0
-pytest-asyncio>=0.24.0
-pytest-cov>=6.0.0
-pytest-mock>=3.14.0
-pytest-httpx>=0.32.0
-faker>=31.0.0
-factory-boy>=3.3.1
-respx>=0.21.0                     # Mock HTTPX requests
-
-# ---------------------------------------------------------------------------
-# Type Stubs
-# ---------------------------------------------------------------------------
-types-redis>=4.6.0
-types-requests>=2.32.0
-types-tqdm>=4.67.0
+tqdm>=4.67.0
