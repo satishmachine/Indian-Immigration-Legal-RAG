@@ -56,8 +56,9 @@ def render_citation_card(citation: LegalCitation, index: int = 1, message_index:
         unsafe_allow_html=True,
     )
 
-    # "Open PDF in New Web Tab" Button
+    # "Open PDF in New Web Tab" Button via Blob URL (bypasses Chrome data: blocking & Streamlit router)
     from services.pdf_service import build_pdf_viewer_url, resolve_pdf_filename
+    import streamlit.components.v1 as components
 
     pdf_filename = getattr(citation, "pdf_name", None)
     target_url = build_pdf_viewer_url(
@@ -70,14 +71,59 @@ def render_citation_card(citation: LegalCitation, index: int = 1, message_index:
     resolved_pdf = resolve_pdf_filename(citation.act_name, pdf_filename)
     sec_label = f" (Sec. {html_lib.escape(citation.section_number)})" if citation.section_number and citation.section_number.upper() != "N/A" else ""
 
-    st.markdown(
-        f"""
-        <div style="margin-top: 0.6rem;">
-            <a href="{target_url}" target="_blank" class="pdf-open-newtab-btn">
-                <span>📄 Open {html_lib.escape(resolved_pdf)}{sec_label} in New Web Tab</span>
-                <span style="font-size: 0.9rem; margin-left: 0.3rem;">↗</span>
-            </a>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    button_html = f"""
+    <style>
+    body {{
+        margin: 0;
+        padding: 0;
+        background: transparent;
+    }}
+    .pdf-btn {{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 0.45rem 0.9rem;
+        background: #1E293B;
+        border: 1px solid #3B82F6;
+        color: #93C5FD;
+        border-radius: 6px;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-sizing: border-box;
+        transition: all 0.2s ease;
+    }}
+    .pdf-btn:hover {{
+        background: #2563EB;
+        color: #FFFFFF;
+        border-color: #60A5FA;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    }}
+    </style>
+    <button onclick="openViewer()" class="pdf-btn">
+        <span>📄 Open {html_lib.escape(resolved_pdf)}{sec_label} in New Web Tab</span>
+        <span style="font-size: 0.9rem; margin-left: 0.35rem;">↗</span>
+    </button>
+    <script>
+    function openViewer() {{
+        const rawUrl = "{target_url}";
+        if (rawUrl.startsWith("data:text/html;base64,")) {{
+            const b64 = rawUrl.substring("data:text/html;base64,".length);
+            const binary = atob(b64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {{
+                bytes[i] = binary.charCodeAt(i);
+            }}
+            const blob = new Blob([bytes], {{type: 'text/html'}});
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        }} else {{
+            window.open(rawUrl, '_blank');
+        }}
+    }}
+    </script>
+    """
+    components.html(button_html, height=44)
+
