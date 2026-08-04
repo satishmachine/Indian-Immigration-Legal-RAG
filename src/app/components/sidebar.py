@@ -79,16 +79,26 @@ def render_sidebar() -> dict[str, str | None]:
             st.markdown("</div>", unsafe_allow_html=True)
 
         # Available PDF Documents List
+        root_dir = Path(__file__).resolve().parents[3]
+        static_pdf_dir = root_dir / "static" / "pdfs"
+        dataset_pdf_dir = root_dir / "Data_Set"
+
+        found_pdfs: list[str] = []
+        if static_pdf_dir.exists():
+            found_pdfs.extend(sorted([f.name for f in static_pdf_dir.glob("*.pdf")]))
+        if dataset_pdf_dir.exists():
+            found_pdfs.extend(sorted([f.name for f in dataset_pdf_dir.glob("*.pdf")]))
+
         uploaded_pdfs = AppState.get_uploaded_pdfs()
-        dataset_pdfs = ["Citizenship_Act_1955.pdf", "Passport_Act_1967.pdf", "Foreigners_Act_1946.pdf", "Emigration_Act_1983.pdf"]
-        all_pdfs = list(dict.fromkeys(uploaded_pdfs + dataset_pdfs))
+        all_pdfs = list(dict.fromkeys(uploaded_pdfs + found_pdfs))
 
         if all_pdfs:
             st.markdown('<div style="padding: 0.3rem 0.85rem 0.2rem; font-size:0.70rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em;">Statutory PDF Library</div>', unsafe_allow_html=True)
-            for pdf_item in all_pdfs[:6]:
+            for pdf_item in all_pdfs:
                 is_selected = AppState.get_selected_pdf() == pdf_item
                 btn_icon = "🟢" if is_selected else "📄"
-                if st.button(f"{btn_icon}  {pdf_item[:28]}", key=f"view_pdf_btn_{pdf_item}", use_container_width=True):
+                display_name = pdf_item if len(pdf_item) <= 28 else pdf_item[:25] + "..."
+                if st.button(f"{btn_icon}  {display_name}", key=f"view_pdf_btn_{pdf_item}", use_container_width=True, help=pdf_item):
                     AppState.set_selected_pdf(pdf_item)
                     st.rerun()
 
