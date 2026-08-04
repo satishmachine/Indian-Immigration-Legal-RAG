@@ -322,37 +322,73 @@
 
     const encodedName = encodeURIComponent(pdfFile);
     const uriName = encodeURI(pdfFile);
+    
+    // Detect base path dynamically (e.g. /~/+/app/static or /app/static)
+    const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+    
     const candidateUrls = Array.from(new Set([
-      `/app/static/pdfs/${uriName}`,
-      `/app/static/pdfs/${encodedName}`,
-      `/app/static/pdfs/${pdfFile}`,
+      `${basePath}/pdfs/${uriName}`,
+      `${basePath}/pdfs/${encodedName}`,
+      `${basePath}/pdfs/${pdfFile}`,
       `./pdfs/${uriName}`,
       `./pdfs/${encodedName}`,
-      `./pdfs/${pdfFile}`
+      `./pdfs/${pdfFile}`,
+      `/app/static/pdfs/${uriName}`,
+      `/app/static/pdfs/${encodedName}`
     ]));
 
     let validPdfUrl = candidateUrls[0];
 
+    function fetchWithTimeout(url, timeoutMs = 2500) {
+      return Promise.race([
+        fetch(url, { method: 'HEAD' }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), timeoutMs))
+      ]);
+    }
+
     async function loadPdfWithFallback() {
-      if (typeof pdfjsLib === 'undefined') {
-        useIframeFallback(validPdfUrl);
-        return;
-      }
-
       let loadedPdf = null;
-      let lastErr = null;
+      let workingUrl = null;
 
+      // 1. Quick HEAD fetch check to find valid URL quickly without hanging
       for (const url of candidateUrls) {
         try {
-          console.log("Attempting PDF load from:", url);
-          const loadingTask = pdfjsLib.getDocument(url);
-          loadedPdf = await loadingTask.promise;
-          validPdfUrl = url;
-          console.log("Successfully loaded PDF from:", url);
-          break;
+          const res = await fetchWithTimeout(url, 2000);
+          if (res && (res.status === 200 || res.status === 304)) {
+            workingUrl = url;
+            console.log("Found responsive PDF candidate URL:", url);
+            break;
+          }
+        } catch (e) {
+          // continue checking next candidate
+        }
+      }
+
+      if (!workingUrl) {
+        workingUrl = candidateUrls[0];
+      }
+
+      validPdfUrl = workingUrl;
+
+      if (typeof pdfjsLib !== 'undefined') {
+        try {
+          const loadingTask = pdfjsLib.getDocument({
+            url: workingUrl,
+            cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+            cMapPacked: true,
+            isEvalSupported: false,
+            disableFontFace: false
+          });
+
+          // Timeout wrapper for PDF.js document loading
+          const loadPromise = loadingTask.promise;
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("PDF.js load timeout")), 5000)
+          );
+
+          loadedPdf = await Promise.race([loadPromise, timeoutPromise]);
         } catch (err) {
-          lastErr = err;
-          console.warn("Failed loading PDF from:", url, err);
+          console.warn("PDF.js loading failed or timed out for:", workingUrl, err);
         }
       }
 
@@ -361,11 +397,11 @@
         totalPages = pdfDoc.numPages;
         document.getElementById('pageTotalVal').textContent = totalPages;
         document.getElementById('loadingSpinner').style.display = 'none';
-        document.getElementById('nativePdfBtn').href = `${validPdfUrl}#page=${initialPageNum}&search=Section%20${encodeURIComponent(sectionNum)}`;
+        document.getElementById('nativePdfBtn').href = `${workingUrl}#page=${initialPageNum}&search=Section%20${encodeURIComponent(sectionNum)}`;
         renderPage(currentPage);
       } else {
-        console.error("All PDF load candidates failed. Fallback to iframe.", lastErr);
-        useIframeFallback(candidateUrls[0]);
+        console.warn("Falling back to native browser PDF iframe player...");
+        useIframeFallback(workingUrl);
       }
     }
 
@@ -378,6 +414,14 @@
       frame.src = `${finalUrl}#page=${initialPageNum}&search=Section%20${encodeURIComponent(sectionNum)}`;
       document.getElementById('nativePdfBtn').href = frame.src;
     }
+
+    // Safety fallback timer: guarantee spinner disappears after 7 seconds max no matter what!
+    setTimeout(() => {
+      if (!pdfDoc && document.getElementById('loadingSpinner').style.display !== 'none') {
+        console.warn("Emergency safety timeout fired. Triggering iframe fallback.");
+        useIframeFallback(validPdfUrl);
+      }
+    }, 7000);
 
     loadPdfWithFallback();
 
