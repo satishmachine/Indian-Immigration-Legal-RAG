@@ -274,4 +274,4 @@ def build_pdf_viewer_url(
         params["title"] = section_title[:60]
 
     query_str = urllib.parse.urlencode(params)
-    return f"app/static/pdf_viewer.html?{query_str}"
+    return f"/app/static/pdf_viewer.html?{query_str}"
