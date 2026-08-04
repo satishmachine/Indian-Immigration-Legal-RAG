@@ -249,8 +249,11 @@ def build_pdf_viewer_url(
     pdf_name: str | None = None,
 ) -> str:
     """
-    Build web URL targeting pdf_viewer.html in a new web tab.
+    Build standalone Data URL with embedded PDF bytes and statutory section page locator config.
+    Opens natively in a new web tab on Streamlit Cloud with zero network requests or routing issues.
     """
+    import base64
+
     ensure_static_pdfs_synced()
     resolved_pdf = resolve_pdf_filename(act_name, pdf_name, section_title)
 
@@ -264,6 +267,43 @@ def build_pdf_viewer_url(
     if sec_str.upper() in ("N/A", "NONE"):
         sec_str = "1"
 
+    root = get_project_root()
+    pdf_path = root / "static" / "pdfs" / resolved_pdf
+    if not pdf_path.exists():
+        pdf_path = root / "Data_Set" / resolved_pdf
+
+    html_template_path = root / "static" / "pdf_viewer.html"
+
+    # Attempt self-contained base64 Data URL embedding
+    if html_template_path.exists() and pdf_path.exists():
+        try:
+            with open(html_template_path, "r", encoding="utf-8") as fh:
+                html_content = fh.read()
+
+            with open(pdf_path, "rb") as fh:
+                pdf_b64 = base64.b64encode(fh.read()).decode("utf-8")
+
+            esc_act = (act_name or "Statutory Act").replace('"', '\\"').replace("\n", " ")
+            esc_title = (section_title[:60] if section_title else "").replace('"', '\\"').replace("\n", " ")
+
+            injected_js = (
+                f'window.EMBEDDED_PDF_BASE64 = "{pdf_b64}";\n'
+                f'window.EMBEDDED_PARAMS = {{\n'
+                f'  file: "{resolved_pdf}",\n'
+                f'  section: "{sec_str}",\n'
+                f'  page: "{resolved_page}",\n'
+                f'  act: "{esc_act}",\n'
+                f'  title: "{esc_title}"\n'
+                f'}};'
+            )
+
+            modified_html = html_content.replace("// EMBEDDED_DATA_HOOK", injected_js)
+            b64_html = base64.b64encode(modified_html.encode("utf-8")).decode("utf-8")
+            return f"data:text/html;base64,{b64_html}"
+        except Exception as exc:
+            logger.warning("Failed to generate embedded Data URL for PDF viewer: %s", exc)
+
+    # Fallback to standard URL path
     params = {
         "file": resolved_pdf,
         "section": sec_str,
@@ -275,3 +315,4 @@ def build_pdf_viewer_url(
 
     query_str = urllib.parse.urlencode(params)
     return f"/app/static/pdf_viewer.html?{query_str}"
+

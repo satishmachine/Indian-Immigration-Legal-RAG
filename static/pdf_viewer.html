@@ -286,17 +286,21 @@
   </div>
 
   <script>
+    // EMBEDDED_DATA_HOOK
+    window.EMBEDDED_PDF_BASE64 = window.EMBEDDED_PDF_BASE64 || "";
+    window.EMBEDDED_PARAMS = window.EMBEDDED_PARAMS || {};
+
     if (typeof pdfjsLib !== 'undefined') {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
 
-    // Parse URL Parameters
+    // Parse URL Parameters (or embedded params if present)
     const urlParams = new URLSearchParams(window.location.search);
-    const pdfFile = urlParams.get('file') || 'the_citizenship_act_1955.pdf';
-    const sectionNum = urlParams.get('section') || '';
-    const sectionTitle = urlParams.get('title') || '';
-    const initialPageNum = parseInt(urlParams.get('page') || '1', 10);
-    const actTitle = urlParams.get('act') || 'Statutory Act';
+    const pdfFile = window.EMBEDDED_PARAMS.file || urlParams.get('file') || 'the_citizenship_act_1955.pdf';
+    const sectionNum = window.EMBEDDED_PARAMS.section || urlParams.get('section') || '';
+    const sectionTitle = window.EMBEDDED_PARAMS.title || urlParams.get('title') || '';
+    const initialPageNum = parseInt(window.EMBEDDED_PARAMS.page || urlParams.get('page') || '1', 10);
+    const actTitle = window.EMBEDDED_PARAMS.act || urlParams.get('act') || 'Statutory Act';
 
     let pdfDoc = null;
     let currentPage = initialPageNum;
@@ -362,14 +366,32 @@
       let pdfBuffer = null;
       let workingUrl = candidateUrls[0];
 
-      // Step 1: Scan candidate URLs for valid %PDF binary stream with timeout
-      for (const url of candidateUrls) {
-        console.log("Checking PDF candidate:", url);
-        pdfBuffer = await fetchPdfBufferWithTimeout(url, 2500);
-        if (pdfBuffer) {
-          workingUrl = url;
-          console.log("Found valid %PDF stream at:", url);
-          break;
+      // Step 0: Check if PDF base64 binary is directly embedded in HTML (Data URL mode)
+      if (window.EMBEDDED_PDF_BASE64 && window.EMBEDDED_PDF_BASE64.length > 500 && !window.EMBEDDED_PDF_BASE64.startsWith("__")) {
+        try {
+          const binaryStr = atob(window.EMBEDDED_PDF_BASE64);
+          const len = binaryStr.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryStr.charCodeAt(i);
+          }
+          pdfBuffer = bytes.buffer;
+          console.log("Loaded embedded PDF ArrayBuffer directly from Data URL (size:", len, "bytes)");
+        } catch (e) {
+          console.warn("Failed to decode EMBEDDED_PDF_BASE64:", e);
+        }
+      }
+
+      // Step 1: Scan candidate URLs if no embedded PDF buffer exists
+      if (!pdfBuffer) {
+        for (const url of candidateUrls) {
+          console.log("Checking PDF candidate:", url);
+          pdfBuffer = await fetchPdfBufferWithTimeout(url, 2500);
+          if (pdfBuffer) {
+            workingUrl = url;
+            console.log("Found valid %PDF stream at:", url);
+            break;
+          }
         }
       }
 
