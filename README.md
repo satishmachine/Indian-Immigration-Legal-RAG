@@ -41,7 +41,7 @@ Unlike generic PDF chatbots, this system:
 - Executes **hybrid retrieval** fusing Dense Vector search (Qdrant Cloud) with Sparse Keyword search (BM25) via Reciprocal Rank Fusion (RRF)
 - Reranks statutory candidates using a **cross-encoder reranker** (`ms-marco-MiniLM-L-12-v2` by default, configurable)
 - Features an **Interactive Title-Aware PDF Viewer** (`pdf_viewer.html`) that opens statutory citations in new tabs, navigates to the exact section page, and renders **a single glowing highlight box** over the section title heading
-- Supports **five LLM providers** (OpenAI, Anthropic/Claude, Google Gemini, Groq, Ollama) switchable via a single environment variable
+- Implements an **LLM Provider Factory** (`LLMFactory`) with primary support for **Groq** (`llama-3.3-70b-versatile`) and fallback to **OpenAI / Euri Proxy** & Mock modes
 - Supports **multiple embedding providers** (BGE/BAAI, Sentence Transformers, OpenAI, Voyage AI, Jina, Ollama)
 - Provides a **FastAPI REST backend** alongside the Streamlit UI for programmatic integration
 - Includes optional **LangSmith tracing & observability** for full pipeline visibility
@@ -73,9 +73,9 @@ Unlike generic PDF chatbots, this system:
 - Upload custom statutory PDFs via the sidebar.
 - Auto-saves the file, computes embeddings, and upserts vectors directly into Qdrant Cloud.
 
-### 6. 🤖 Multi-LLM Provider Support
-- Switch between **OpenAI, Anthropic (Claude), Google Gemini, Groq**, or **Ollama** (local) via `ACTIVE_LLM_PROVIDER` in `.env`.
-- All providers are uniformly wrapped behind a shared LangChain interface.
+### 6. 🤖 Flexible LLM Provider Architecture
+- High-speed inference using **Groq** (`llama-3.3-70b-versatile`) with seamless fallback to **OpenAI / Euri Proxy** (`gpt-4o-mini` / `gpt-4.1-mini`) and offline Mock mode via `LLMFactory`.
+- Wrapped uniformly behind a shared LangChain `BaseChatModel` interface.
 
 ### 7. 🔍 Hybrid Retrieval Pipeline
 - **Dense Retrieval**: Semantic similarity via Qdrant Cloud.
